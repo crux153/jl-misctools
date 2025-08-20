@@ -302,6 +302,20 @@ def parse_newfw(info, fw, outdir:Path):
             if ent.flags & 0x10:
                 # more of reserved areas
                 pass
+            elif ent.name == "dir_song":
+                # this has flag 0x82 (regular file), but it is actually a directory. need to handle this here
+                # actually, that is a directory. so extract its contents too
+                extradir = filesdir / "dir_song"
+                extradir.mkdir()
+
+                for aent in JLFSIterator(fw, ent.data_offset):
+                    if aent.flags == 0x02:
+                        print('====>', aent)
+                        fpath = extradir / aent.name
+                        fpath.write_bytes(fw[aent.data_offset : aent.data_offset + aent.data_size])
+                    else:
+                        print("skipping", aent)
+
             elif ent.flags == 0x82:
                 # regular file
                 fpath.write_bytes(fw[ent.data_offset : ent.data_offset + ent.data_size])
